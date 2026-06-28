@@ -1,0 +1,25 @@
+on:
+  push:
+    - workflows: build-site
+      filter:
+        branches: ["main"]
+
+workflows:
+  build-site:
+    tasks:
+      - name: build-task
+        cubes:
+          - name: build-and-deploy
+            image: docker.io/library/node:20
+            script:
+              - npm install
+              - npm run build
+              - git config user.name "SourceCraft CI"
+              - git config user.email "ci@sourcecraft.dev"
+              - git remote set-url origin https://x-access-token:${SOURCECRAFT_TOKEN}@git.sourcecraft.dev/artyomradchenko/spisok-zadach-to-do-list.git
+              - git checkout --orphan release
+              - mv /home/user/workspace/dist/* . 2>/dev/null || true
+              - rm -rf src package.json tsconfig.json vite.config.ts postcss.config.js tailwind.config.js index.html node_modules README.md .sourcecraft
+              - git add .
+              - "git diff --staged --quiet || git commit --message deploy-site"
+              - git push origin release --force
